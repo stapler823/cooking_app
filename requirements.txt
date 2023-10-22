@@ -1,3 +1,4 @@
 llama-index==0.8.41
 python-dotenv
-faiss
+faiss-cpu
+Markdown
