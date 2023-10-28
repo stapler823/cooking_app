@@ -1,3 +1,4 @@
+Flask==2.3.2
 llama-index==0.8.41
 python-dotenv
 faiss-cpu
