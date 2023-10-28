@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>料理レシピ</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <form method="post">
+    <label for="user_input">質問を入力してください:</label><br /><br />
+    <input type="text" id="user_input" name="user_input">
+    <input type="submit" value="送信">
+  </form>
+  <button id="modalOpen" class="button">料理レシピ</button>
+  <p>質問:</p>
+  <p>{{prompt}}</p>
+  <br />
+  <p>回答:</p>
+  <p>{{text}}</p>  
+  <div id="easyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1>材料リスト</h1>
+        <span class="modalClose">×</span>
+      </div>
+      <div class="modal-body">
+        {% for ingredients_dic in ingredients_list %}
+          <p>
+          {% for ingredient in ingredients_dic.values() %}
+            {% if loop.index0 == 1 %}
+              :
+            {% endif %}
+            {{ ingredient }}
+          {% endfor %}
+          </p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <script src="/static/js/script.js"></script>
+</body>
+</html>

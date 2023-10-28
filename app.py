@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, render_template, Markup
 from dotenv import load_dotenv
 from llama_index import GPTListIndex
 from pathlib import Path
@@ -33,7 +33,10 @@ def generate_text(prompt):
     "その際、回答の形式は下記としてください。\n"
     "■料理名\n"
     "■材料\n"
+    "[右記形式で取得→- <材料>:<分量>]\n"
+    "[「A[<材料><分量> <材料><分量>]」の記載も材料と分量なので取得すること]\n"
     "■作り方\n"
+    "[右記形式で取得→<番号>.<説明>]\n"
     )
    QA_PROMPT = QuestionAnswerPrompt(QA_PROMPT_TMPL)
    path = './storage'
@@ -67,6 +70,8 @@ def generate_text(prompt):
 
    engine = index.as_query_engine(text_qa_template=QA_PROMPT)
    response = engine.query(prompt)
+   print("response")
+   print(response)
    return response.response
 
 @app.route('/', methods={'GET', 'POST'})
@@ -75,50 +80,33 @@ def home():
    # Chat Completion APIにリクエストして、レスポンスを格納する。
    if request.method == 'POST':
       prompt = request.form['user_input']
-      text = markdown.markdown(generate_text(prompt)).replace('\n', '<br />')
+      # text = markdown.markdown(generate_text(prompt)).replace('\n', '<br />')
+      text = generate_text(prompt)
+
+      # 材料リストを作成
+      ingredients_list = []
+      lines = text.split('\n')
+
+      for line in lines:
+        if line.startswith('- '):
+          # 行が「- 」で始まる場合、キーと値に分割して辞書に格納
+          parts = line.lstrip('- ').split(': ')
+          if len(parts) == 2:
+            ingredient, amount = parts
+            ingredients_list.append({'ingredient': ingredient.strip(), 'amount': amount.strip()})
+
+      print("ingredients_list")
+      print(ingredients_list)
+      text = text.replace('\n', '<br />')
+
+
    else:
       #初期状態では何もしない
       prompt = ""
       text = ""
+      ingredients_list = []
 
-   return f'''
-      <form method="post">
-        <label for="user_input">質問を入力してください:</label><br /><br />
-        <input type="text" id="user_input" name="user_input">
-        <input type="submit" value="送信">
-      </form>
-      <p>質問:</p>
-      <p>{prompt}</p>
-      <br />
-      <p>回答:</p>
-      <p>{text}</p>
-   '''
-
-
-# @app.route('/')
-# def hello():
-#     CJKPDFReader = download_loader("CJKPDFReader")
-#     loader = CJKPDFReader()
-#     documents = loader.load_data(file='./input/recipe_test.pdf')
-
-#     list_index = GPTListIndex.from_documents(documents)
-#     QA_PROMPT="""
-#       あなたは世界中で信頼されている専門的なQ&Aシステムです。
-#       提供されたコンテキスト情報を使用してクエリに回答してください。
-#       ---------------------
-#       {context_str}
-#       ---------------------
-#       この情報を踏まえて、次の質問に回答してください: {query_str}
-#     """
-#     # QA_PROMPT="""
-#     #   てすと
-#     # """
-#     query_engine = list_index.as_query_engine(text_qa_template=QuestionAnswerPrompt(QA_PROMPT))
-
-#     response = query_engine.query("じゃがいも料理に使う材料と分量を教えて")
-#     print(response)
-#     response = "test"
-#     return response
+   return render_template('index.html', prompt=prompt, text=Markup(text), ingredients_list=ingredients_list)
 
 if __name__ == "__main__":
   app.run()
