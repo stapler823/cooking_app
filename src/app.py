@@ -11,13 +11,21 @@ import os
 from llama_index.vector_stores.faiss import FaissVectorStore
 import faiss 
 import markdown
+from flask_socketio import SocketIO, emit
+import io
+
 
 app = Flask(__name__)
 
 load_dotenv()
 
+# streaming用にWebSocketを定義する
+async_mode = None
+socketio = SocketIO(app, async_mode=async_mode)
+
 logging.basicConfig(filename='sample.log', level=logging.DEBUG, force=True)
 
+@socketio.on('message')
 def generate_text(prompt):
    llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo'))
 
@@ -68,45 +76,72 @@ def generate_text(prompt):
       #save index to disk
       index.storage_context.persist()
 
-   engine = index.as_query_engine(text_qa_template=QA_PROMPT)
+   engine = index.as_query_engine(text_qa_template=QA_PROMPT, streaming=True)
    response = engine.query(prompt)
-   print("response")
-   print(response)
-   return response.response
+   text = response
+
+   all_texts = ""
+
+   for text in response.response_gen:
+      all_texts += text
+      # 1文字ずつクライアントに返却
+      emit('message', {'type': 'text', 'data': text}, json=True)
+
+   # メッセージの終了をクライアントに返却
+   emit('message', {'type': 'text', 'data': '<END_OF_MESSAGE>'}, json=True)
+   print("ingredients_list")
+
+   # 材料リストを作成
+   ingredients_list = []
+   lines = all_texts.split('\n')
+
+   for line in lines:
+     if line.startswith('- '):
+       # 行が「- 」で始まる場合、キーと値に分割して辞書に格納
+       parts = line.lstrip('- ').split(': ')
+       if len(parts) == 2:
+         ingredient, amount = parts
+         ingredients_list.append({'ingredient': ingredient.strip(), 'amount': amount.strip()})
+   print("ingredients_list")
+   print(ingredients_list)
+   # 材料リストをクライアントに返却
+   emit('message', {'type': 'ingredients_list', 'data': ingredients_list}, json=True)
+    
+   return
 
 @app.route('/', methods={'GET', 'POST'})
 def home():
    # フォームに質問を入力して、「送信」を押下したときは
    # Chat Completion APIにリクエストして、レスポンスを格納する。
    if request.method == 'POST':
-      prompt = request.form['user_input']
-      # text = markdown.markdown(generate_text(prompt)).replace('\n', '<br />')
-      text = generate_text(prompt)
+      # prompt = request.form['user_input']
+      # text = generate_text(prompt)
 
-      # 材料リストを作成
-      ingredients_list = []
-      lines = text.split('\n')
+      # # 材料リストを作成
+      # ingredients_list = []
+      # lines = text.split('\n')
 
-      for line in lines:
-        if line.startswith('- '):
-          # 行が「- 」で始まる場合、キーと値に分割して辞書に格納
-          parts = line.lstrip('- ').split(': ')
-          if len(parts) == 2:
-            ingredient, amount = parts
-            ingredients_list.append({'ingredient': ingredient.strip(), 'amount': amount.strip()})
+      # for line in lines:
+      #   if line.startswith('- '):
+      #     # 行が「- 」で始まる場合、キーと値に分割して辞書に格納
+      #     parts = line.lstrip('- ').split(': ')
+      #     if len(parts) == 2:
+      #       ingredient, amount = parts
+      #       ingredients_list.append({'ingredient': ingredient.strip(), 'amount': amount.strip()})
 
-      print("ingredients_list")
-      print(ingredients_list)
-      text = text.replace('\n', '<br />')
-
-
+      # print("ingredients_list")
+      # print(ingredients_list)
+      # text = text.replace('\n', '<br />')
+      pass
    else:
-      #初期状態では何もしない
-      prompt = ""
+      # #初期状態では何もしない
+      # prompt = ""
       text = ""
-      ingredients_list = []
+      # ingredients_list = []
 
-   return render_template('index.html', prompt=prompt, text=Markup(text), ingredients_list=ingredients_list)
+   # return render_template('index.html', prompt=prompt, text=Markup(text), ingredients_list=ingredients_list)
+
+   return render_template('index.html', text="Markup(text)", ingredients_list=[])
 
 if __name__ == "__main__":
-  app.run(host="0.0.0.0", port=80, debug=True)
+  socketio.run(app, host="0.0.0.0", port=80, debug=True)

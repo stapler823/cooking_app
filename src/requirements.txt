@@ -1,4 +1,5 @@
 Flask==2.3.2
+Flask-SocketIO
 llama-index==0.8.41
 python-dotenv
 faiss-cpu
