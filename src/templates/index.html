@@ -8,12 +8,14 @@
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-  <form method="post" id="form">
-    <label for="user_input">作る料理を入力してください:</label><br /><br />
-    <input type="text" id="user_input" name="user_input">
-    <input type="submit" value="送信">
-  </form>
-  <button id="modalOpen" class="button">料理レシピ</button>
+  <div class="item-container">
+    <form method="post" id="form">
+      <label for="user_input">作る料理を入力してください:</label><br >
+      <input type="text" id="user_input" name="user_input" class="user_input">
+      <input type="submit" value="送信">
+    </form>
+    <button id="modalOpen" class="button">材料リスト</button>
+  </div>
   <div id="chat"></div>
   <div id="easyModal" class="modal">
     <div class="modal-content">
