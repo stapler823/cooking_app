@@ -111,37 +111,7 @@ def generate_text(prompt):
 
 @app.route('/', methods={'GET', 'POST'})
 def home():
-   # フォームに質問を入力して、「送信」を押下したときは
-   # Chat Completion APIにリクエストして、レスポンスを格納する。
-   if request.method == 'POST':
-      # prompt = request.form['user_input']
-      # text = generate_text(prompt)
-
-      # # 材料リストを作成
-      # ingredients_list = []
-      # lines = text.split('\n')
-
-      # for line in lines:
-      #   if line.startswith('- '):
-      #     # 行が「- 」で始まる場合、キーと値に分割して辞書に格納
-      #     parts = line.lstrip('- ').split(': ')
-      #     if len(parts) == 2:
-      #       ingredient, amount = parts
-      #       ingredients_list.append({'ingredient': ingredient.strip(), 'amount': amount.strip()})
-
-      # print("ingredients_list")
-      # print(ingredients_list)
-      # text = text.replace('\n', '<br />')
-      pass
-   else:
-      # #初期状態では何もしない
-      # prompt = ""
-      text = ""
-      # ingredients_list = []
-
-   # return render_template('index.html', prompt=prompt, text=Markup(text), ingredients_list=ingredients_list)
-
-   return render_template('index.html', text="Markup(text)", ingredients_list=[])
+   return render_template('index.html')
 
 if __name__ == "__main__":
   socketio.run(app, host="0.0.0.0", port=80, debug=True)
